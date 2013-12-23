@@ -7,9 +7,10 @@
     <meta name="description" content="CS302 Grading Web App">
     <meta name="author" content="Nathan Jordan">
 
-    <title>Log In</title>
+    <title>CS302 &bull; Log In</title>
 
     <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/assets/css/main.css" rel="stylesheet">
 
   </head>
 
@@ -17,13 +18,10 @@
 
     <div class="container">
 
-      <form class="form-signin" role="form">
+      <form class="form-signin" role="form" action="/login" method="POST">
         <h2 class="form-signin-heading">Please sign in</h2>
-        <input type="text" class="form-control" placeholder="Email address" required autofocus>
-        <input type="password" class="form-control" placeholder="Password" required>
-        <label class="checkbox">
-          <input type="checkbox" value="remember-me"> Remember me
-        </label>
+        <input type="text" name="username" class="form-control" placeholder="UNR NetID" required autofocus>
+        <input type="password" name="password" class="form-control" placeholder="Password" required>
         <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
       </form>
 

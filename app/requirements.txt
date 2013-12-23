@@ -1,3 +1,4 @@
 flask==0.10
 gitpython==0.3.2
 python-ldap==2.4.13
+sqlalchemy==0.8.4

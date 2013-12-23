@@ -1,0 +1,31 @@
+    {% include 'header.html' %}
+
+    <h1>Assignment {{ assignment.id }} <small>{{ assignment.name }}</small></h1>
+
+    <h2>Submit/Test Upload</h2>
+    <form role="form">
+        <div class="form-group">
+            <label for="assignment-archive">Choose Archive</label>
+            <input type="file" id="assignment-archive">
+        </div>
+    </form>
+
+    <a class="btn btn-success">Upload Test</a>
+    <a class="btn btn-default">Submit Assignment</a>
+
+    <h2>Test Results</h1>
+
+    <ul class="list-group">
+        <a href="#" class="list-group-item">
+            <h4 class="list-group-item-heading">Test 2</h4>
+            <span class="badge">18/20</span>
+            <p class="list-group-item-text">View Test Results</p>
+        </a>
+        <a href="#" class="list-group-item">
+            <h4 class="list-group-item-heading">Test 1</h4>
+            <span class="badge">12/20</span>
+            <p class="list-group-item-text">View Test Results</p>
+        </a>
+    </ul>
+
+    {% include 'footer.html' %}
