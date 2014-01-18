@@ -1,0 +1,22 @@
+    {% include 'header.html' %}
+
+    <h1>Test ID {{ test.id }}</h1>
+    <h2>Unit Tests</h1>
+
+    {% for test in submission.unit_tests %}
+    <h4>{{ test.test}}</h4>
+    <pre>
+        {{ test.test_output }}
+    </pre>
+    {% endfor %}
+
+    <h2>Output Comparison Tests</h>
+
+    {% for test in submission.output_tests %}
+    <h4>{{ test.test }}</h4>
+    <pre>
+        {{ test.test_output }}
+    </pre>
+    {% endfor %}
+
+    {% include 'footer.html' %}

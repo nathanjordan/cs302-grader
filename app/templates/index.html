@@ -1,18 +1,24 @@
     {% include 'header.html' %}
 
-    <h1>Unsubmitted Assignments</h1>
+    <h2>Unsubmitted Assignments</h2>
 
     <ul class="list-group">
+        {% if unsubmitted_assignments.count() == 0 %}
+        <div class="alert alert-success"><strong>Great work </strong>All active assignments are completed</div>
+        {% endif %}
         {% for assignment in unsubmitted_assignments %}
-        <a href="#" class="list-group-item">
+        <a href="/assignment/{{ assignment.id }}" class="list-group-item">
             <h4 class="list-group-item-heading">{{ assignment.name }}</h4>
             <p class="list-group-item-text">{{ assignment.description }}</p>
         </a>
         {% endfor %}
     </ul>
-    <h1>Submitted Assignments</h1>
+    <h2>Submitted Assignments</h2>
 
     <ul class="list-group">
+        {% if submitted_assignments.count() == 0 %}
+        <div class="alert alert-info"><strong>Sorry </strong>You haven't submitted anything yet</div>
+        {% endif %}
         {% for assignment in submitted_assignments %}
         <a href="/assignment/{{ assignment.id }}" class="list-group-item">
             <h4 class="list-group-item-heading">{{ assignment.name }}</h4>

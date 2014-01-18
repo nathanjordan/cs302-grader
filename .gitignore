@@ -1,0 +1,4 @@
+*.pyc
+*.db
+*.out
+app/.ropeproject/*
