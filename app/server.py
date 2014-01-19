@@ -11,6 +11,7 @@ import test_data
 import sys
 import auth
 import datetime
+import grader
 
 # Add the current folder to the pythonpath
 current_path = os.path.dirname(os.path.abspath(__file__))
@@ -84,8 +85,9 @@ def assignment_submit_route(id):
             return 'Wrong file type chosen, you need to upload a zip', 400
         # check if this is the final submission
         is_final = True if 'is_final' in request.form else False
+        filename = secure_filename(archive.filename)
         # create new submission
-        sub_id  = database.Submission.create_submission(id, session['net_id'], datetime.datetime.now(), is_final)
+        sub_id  = database.Submission.create_submission(id, session['net_id'], filename, datetime.datetime.now(), is_final)
         #create the assignment directory structure
         student_directory = os.path.join(current_path,
                                  '..',
@@ -96,21 +98,28 @@ def assignment_submit_route(id):
                     )
         if not os.path.exists(student_directory):
             os.makedirs(student_directory)
-        filename = secure_filename(archive.filename)
         archive.save(os.path.join(student_directory, filename))
+        grader.unzip_assignment_archive(sub_id)
+        grader.copy_assignment_files(sub_id)
+        grader.build_submission(sub_id)
         return 'Success', 200
 
 @app.route('/resource/<int:id>')
 def get_resource(id):
+    # get the resource from the db
     resource = db_session.query(database.Resource).get(id)
+    # the name of the assignment folder
     assignment = 'assignment' + str(resource.assignment.id)
+    # filename of the resource
     resource_filename = resource.filename
+    # determine the directory
     path = os.path.join(current_path,
                         '..',
                         'assignments',
                         assignment,
                         'resources'
                         )
+    # send the file
     return send_file(path + '/' + resource_filename,
                      as_attachment=True,
                      attachment_filename=resource_filename)

@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_MAIN
-#include "../../catch/catch.hpp"
-#include "reference.hpp"
+#include <catch.hpp>
+#include "Stack.cpp"
 #include <stack>
 
 

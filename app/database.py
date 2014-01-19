@@ -93,15 +93,17 @@ class Submission(Base):
     net_id = Column(String(50), ForeignKey('student.net_id'))
     student = relationship('Student', uselist=False,
                            backref='submissions')
+    filename = Column(String(50))
     submitted = Column(DateTime)
     score = Column(Integer)
     is_final = Column(Boolean)
 
     @classmethod
-    def create_submission(cls, assignment_id, net_id, submitted, is_final):
+    def create_submission(cls, assignment_id, net_id, filename, submitted, is_final):
         submission = Submission()
         submission.assignment_id = assignment_id
         submission.net_id = net_id
+        submission.filename = filename
         submission.submitted = submitted
         submission.is_final = is_final
         db_session.add(submission)
@@ -119,9 +121,24 @@ class Resource(Base):
     filename = Column(String(50))
     description = Column(String(100))
 
+class Test(Base):
+
+    __tablename__ = 'test'
+
+    id = Column(Integer, primary_key=True)
+    assignment_id = Column(Integer, ForeignKey('assignment.id'))
+    assignment = relationship('Assignment', uselist=False, backref='tests')
+    executable_filename = Column(String(50))
+    test_type = Column(String(50))
+    reference_executable_filename = Column(String(50))
+    is_private = Column(Boolean)
+
 def test_data():
     # Clear existing database
-    os.remove('app.db')
+    try:
+        os.remove('app.db')
+    except OSError:
+        pass
 
     # Create Database
     Base.metadata.create_all(bind=engine)
@@ -147,8 +164,18 @@ def test_data():
     db_session.add(resource1)
     db_session.add(resource2)
 
+    test1 = Test(assignment=assignment1, executable_filename="unit_tests_public", test_type="unit", is_private=False)
+    test2 = Test(assignment=assignment1, executable_filename="unit_tests_private", test_type="unit", is_private=True)
+    test3 = Test(assignment=assignment1, executable_filename="diff_test_1", test_type="diff", is_private=False, reference_executable_filename="diff_test_1_reference")
+    test4 = Test(assignment=assignment1, executable_filename="diff_test_2", test_type="diff", is_private=False, reference_executable_filename="diff_test_2_reference")
+
+    db_session.add(test1)
+    db_session.add(test2)
+    db_session.add(test3)
+    db_session.add(test4)
+
     bob_submission1 = Submission(assignment=assignment1, student=bob, score=8, submitted=datetime.datetime.now(), is_final=False)
-    bob_submission2 = Submission(assignment=assignment1, student=bob, score=9, submitted=datetime.datetime.now(), is_final=True)
+    bob_submission2 = Submission(assignment=assignment1, student=bob, score=9, submitted=datetime.datetime.now(), is_final=False)
     bob_submission3 = Submission(assignment=assignment2, student=bob, score=7, submitted=datetime.datetime.now(), is_final=True)
     susan_submission1 = Submission(assignment=assignment1, student=susan, score=7, submitted=datetime.datetime.now(), is_final=False)
     susan_submission2 = Submission(assignment=assignment1, student=susan, score=9, submitted=datetime.datetime.now(), is_final=False)
