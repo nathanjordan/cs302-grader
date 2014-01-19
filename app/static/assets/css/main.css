@@ -13,11 +13,15 @@ padding-bottom:0.3em;
 
 .form-signin {
     margin-top:10%;
-    width:25%;
+    width:35%;
     margin-left:auto;
     margin-right:auto;
 }
 
 .form-signin input {
     margin-bottom:10px;
+}
+
+.container {
+    max-width: 960px;
 }

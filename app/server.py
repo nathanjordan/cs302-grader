@@ -1,14 +1,16 @@
 """ Server module for the grading application """
 
 from flask import (Flask, send_from_directory, render_template, request,
-                   session, redirect)
+                   session, redirect, send_file)
 from werkzeug import secure_filename
+from database import db_session
 import database
 import ldap
 import os
 import test_data
 import sys
 import auth
+import datetime
 
 # Add the current folder to the pythonpath
 current_path = os.path.dirname(os.path.abspath(__file__))
@@ -58,20 +60,19 @@ def index_route():
 def assignment_route(id):
     # get the requested assignment
     assignment = database.Assignment.get_active_assignment_by_id(id)
-    # if an incorrect assignment is requested
-    #if assignment.count() == 0:
-    #    return render_template('404.html')
-    # get assignment submissions
-    print session['net_id']
-    print id
-    submissions = database.Student.get_assignment_submissions(session['net_id'], id)
+    # Get the submissions
+    submissions = database.Assignment.get_assignment_submissions(session['net_id'], id)
     # figure out if this assignment was finalized
-    is_final = database.Student.check_assignment_finalized(session['net_id'], id)
-    # otherwise display assignment
+    is_final = database.Assignment.check_assignment_completed(session['net_id'], id)
+    # get the resources from the assignment
+    resources = database.Assignment.get_assignment_resources(id)
+    # display assignment page
     return render_template('assignment.html',
                            assignment=assignment,
                            submissions=submissions,
-                           page_title="Assignment " + str(id))
+                           resources=resources,
+                           is_final=is_final,
+                           page_title='Assignment ' + str(id))
 
 @app.route('/assignment/<int:id>/submit', methods=['POST'])
 def assignment_submit_route(id):
@@ -81,18 +82,38 @@ def assignment_submit_route(id):
             return 'No file chosen', 400
         if not extension_allowed(archive.filename):
             return 'Wrong file type chosen, you need to upload a zip', 400
+        # check if this is the final submission
+        is_final = True if 'is_final' in request.form else False
+        # create new submission
+        sub_id  = database.Submission.create_submission(id, session['net_id'], datetime.datetime.now(), is_final)
         #create the assignment directory structure
         student_directory = os.path.join(current_path,
                                  '..',
-                                 'submissions/',
-                                 'assignment' + str(id) + '/',
-                                 session['net_id'] + '/'
+                                 'submissions',
+                                 'assignment' + str(id),
+                                 session['net_id'],
+                                 str(sub_id)
                     )
         if not os.path.exists(student_directory):
             os.makedirs(student_directory)
         filename = secure_filename(archive.filename)
         archive.save(os.path.join(student_directory, filename))
         return 'Success', 200
+
+@app.route('/resource/<int:id>')
+def get_resource(id):
+    resource = db_session.query(database.Resource).get(id)
+    assignment = 'assignment' + str(resource.assignment.id)
+    resource_filename = resource.filename
+    path = os.path.join(current_path,
+                        '..',
+                        'assignments',
+                        assignment,
+                        'resources'
+                        )
+    return send_file(path + '/' + resource_filename,
+                     as_attachment=True,
+                     attachment_filename=resource_filename)
 
 @app.route('/submission/<int:id>')
 def test_route(id):
@@ -102,7 +123,7 @@ def test_route(id):
         "id": 5,
         "test_output": test_output
     }
-    return render_template('test.html', test=test)
+    return render_template('submission.html', test=test)
 
 
 @app.route('/logout')
@@ -141,5 +162,10 @@ def serve_static_resource(resource):
     # Return the static file
     return send_from_directory(asset_path, resource)
 
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db_session.remove()
+
 if __name__ == '__main__':
+    database.test_data()
     app.run("0.0.0.0", 8000)

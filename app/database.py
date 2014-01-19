@@ -1,15 +1,13 @@
 from sqlalchemy import (Column, ForeignKey, Integer, String, Boolean, DateTime,
-                        create_engine, and_, func)
-from sqlalchemy.orm import relationship, sessionmaker
+                        create_engine, and_, func, create_engine)
+from sqlalchemy.orm import relationship, scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import datetime
+import os
 
 Base = declarative_base()
-
 engine = create_engine('sqlite:///app.db')
-Session = sessionmaker(bind=engine)
-session = Session()
-
+db_session = scoped_session(sessionmaker(bind=engine))
 
 class Student(Base):
     """ Class for students DBO """
@@ -21,16 +19,16 @@ class Student(Base):
 
     @classmethod
     def get_submitted_assignments(cls, net_id):
-        assignments = session.query(Assignment).join(Submission).filter(
+        assignments = db_session.query(Assignment).join(Submission).filter(
             Submission.net_id == net_id
         )
         return assignments
 
     @classmethod
     def get_unsubmitted_assignments(cls, net_id):
-        assignments = session.query(Assignment).join(Submission).filter(and_(
+        assignments = db_session.query(Assignment).join(Submission).filter(and_(
             ~Assignment.id.in_(
-                session.query(Assignment.id).join(Submission).filter(
+                db_session.query(Assignment.id).join(Submission).filter(
                     Submission.net_id == net_id
                 )
             ),
@@ -39,26 +37,6 @@ class Student(Base):
         )
         return assignments
 
-    @classmethod
-    def get_assignment_submissions(cls, net_id, assignment_id):
-        submissions = session.query(Submission).filter(and_(
-            Assignment.id == assignment_id,
-            Submission.net_id == net_id
-        ))
-        print submissions
-        for row in submissions:
-            print row
-        return submissions
-
-    @classmethod
-    def check_assignment_finalized(cls, net_id, assignment_id):
-        count = session.query(func.count(Submission.id)).filter(and_(
-            Assignment.id == assignment_id,
-            Submission.is_final == True,
-            Submission.net_id == net_id
-        )).scalar()
-        print count
-        return count
 
 
 class Assignment(Base):
@@ -68,8 +46,32 @@ class Assignment(Base):
 
     @classmethod
     def get_active_assignment_by_id(cls, assignment_id):
-        assignment = session.query(Assignment).get(assignment_id)
+        assignment = db_session.query(Assignment).get(assignment_id)
         return assignment
+
+    @classmethod
+    def check_assignment_completed(cls, net_id, assignment_id):
+        count = db_session.query(func.count(Submission.id)).filter(and_(
+            Submission.assignment_id == assignment_id,
+            Submission.is_final
+        )).scalar()
+        return True if count > 0 else False
+
+    @classmethod
+    def get_assignment_submissions(cls, net_id, assignment_id):
+        submissions = db_session.query(Submission).join(Assignment).filter(and_(
+            Assignment.id == assignment_id,
+            Submission.net_id == net_id
+        ))
+        return submissions
+
+    @classmethod
+    def get_assignment_resources(cls, assignment_id):
+        resources = db_session.query(Resource).filter(
+            Resource.assignment_id == assignment_id
+        )
+        return resources
+
 
     id = Column(Integer, primary_key=True)
     name = Column(String(50))
@@ -95,6 +97,18 @@ class Submission(Base):
     score = Column(Integer)
     is_final = Column(Boolean)
 
+    @classmethod
+    def create_submission(cls, assignment_id, net_id, submitted, is_final):
+        submission = Submission()
+        submission.assignment_id = assignment_id
+        submission.net_id = net_id
+        submission.submitted = submitted
+        submission.is_final = is_final
+        db_session.add(submission)
+        db_session.commit()
+        db_session.refresh(submission)
+        return submission.id
+
 class Resource(Base):
 
     __tablename__ = 'resource'
@@ -105,39 +119,44 @@ class Resource(Base):
     filename = Column(String(50))
     description = Column(String(100))
 
-Base.metadata.create_all(engine)
+def test_data():
+    # Clear existing database
+    os.remove('app.db')
 
-# test stuff
-njordan = Student(net_id="njordan", is_admin=True)
-bob = Student(net_id="bob", is_admin=False)
-susan = Student(net_id="susan", is_admin=False)
+    # Create Database
+    Base.metadata.create_all(bind=engine)
 
-session.add(njordan)
-session.add(bob)
-session.add(susan)
+    # Test Data
+    njordan = Student(net_id="njordan", is_admin=True)
+    bob = Student(net_id="bob", is_admin=False)
+    susan = Student(net_id="susan", is_admin=False)
 
-assignment1 = Assignment(name="Assignment 1", description="Stacks", due_date=datetime.datetime.now(), points=10, is_active=True)
-assignment2 = Assignment(name="Assignment 2", description="Linked Lists", due_date=datetime.datetime.now(), points=10, is_active=True)
+    db_session.add(njordan)
+    db_session.add(bob)
+    db_session.add(susan)
 
-session.add(assignment1)
-session.add(assignment2)
+    assignment1 = Assignment(name="Assignment 1", description="Stacks", due_date=datetime.datetime.now(), points=10, is_active=True)
+    assignment2 = Assignment(name="Assignment 2", description="Linked Lists", due_date=datetime.datetime.now(), points=10, is_active=True)
 
-resource1 = Resource(assignment=assignment1, filename="Makefile", description="the makefile brah")
-resource2 = Resource(assignment=assignment1, filename="Stack.h", description="your stack header brah")
+    db_session.add(assignment1)
+    db_session.add(assignment2)
 
-session.add(resource1)
-session.add(resource2)
+    resource1 = Resource(assignment=assignment1, filename="Makefile", description="the makefile brah")
+    resource2 = Resource(assignment=assignment1, filename="Stack.h", description="your stack header brah")
 
-bob_submission1 = Submission(assignment=assignment1, student=bob, score=8, submitted=datetime.datetime.now(), is_final=False)
-bob_submission2 = Submission(assignment=assignment1, student=bob, score=9, submitted=datetime.datetime.now(), is_final=True)
-bob_submission3 = Submission(assignment=assignment2, student=bob, score=7, submitted=datetime.datetime.now(), is_final=True)
-susan_submission1 = Submission(assignment=assignment1, student=susan, score=7, submitted=datetime.datetime.now(), is_final=False)
-susan_submission2 = Submission(assignment=assignment1, student=susan, score=9, submitted=datetime.datetime.now(), is_final=False)
+    db_session.add(resource1)
+    db_session.add(resource2)
 
-session.add(bob_submission1)
-session.add(bob_submission2)
-session.add(bob_submission3)
-session.add(susan_submission1)
-session.add(susan_submission2)
+    bob_submission1 = Submission(assignment=assignment1, student=bob, score=8, submitted=datetime.datetime.now(), is_final=False)
+    bob_submission2 = Submission(assignment=assignment1, student=bob, score=9, submitted=datetime.datetime.now(), is_final=True)
+    bob_submission3 = Submission(assignment=assignment2, student=bob, score=7, submitted=datetime.datetime.now(), is_final=True)
+    susan_submission1 = Submission(assignment=assignment1, student=susan, score=7, submitted=datetime.datetime.now(), is_final=False)
+    susan_submission2 = Submission(assignment=assignment1, student=susan, score=9, submitted=datetime.datetime.now(), is_final=False)
 
-#session.commit()
+    db_session.add(bob_submission1)
+    db_session.add(bob_submission2)
+    db_session.add(bob_submission3)
+    db_session.add(susan_submission1)
+    db_session.add(susan_submission2)
+
+    db_session.commit()
