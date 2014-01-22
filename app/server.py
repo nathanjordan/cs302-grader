@@ -97,18 +97,26 @@ def assignment_submit_route(id):
                                  session['net_id'],
                                  str(sub_id)
                     )
+        # make the submission folder
         if not os.path.exists(student_directory):
             os.makedirs(student_directory)
+        # Save the archive to the submission folder
         archive.save(os.path.join(student_directory, filename))
+        # unzip the archive
         grader.unzip_assignment_archive(sub_id)
+        # copy the assignment files into the submission directory
         grader.copy_assignment_files(sub_id)
-        grader.build_submission(sub_id)
+        # attempt to build the assignment
+        build_successful = grader.build_submission(sub_id)
+        if not build_successful:
+            return redirect('/assignment/' + str(id))
+        # if the build succeeded, run the tests
         for test in assignment.tests:
             if test.test_type == 'unit':
                 grader.grade_unit_test(test.id, sub_id)
             if test.test_type == 'diff':
                 grader.grade_diff_test(test.id, sub_id)
-        return 'Success', 200
+        return redirect('/assignment/' + str(id))
 
 @app.route('/resource/<int:id>')
 def get_resource(id):

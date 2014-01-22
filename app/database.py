@@ -95,6 +95,7 @@ class Submission(Base):
     filename = Column(String(50))
     submitted = Column(DateTime)
     is_final = Column(Boolean)
+    build_output = Column(String(1000))
 
     @classmethod
     def create_submission(cls, assignment_id, net_id, filename, submitted, is_final):

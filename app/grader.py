@@ -76,12 +76,24 @@ def build_submission(submission_id):
                            )
     sub_dir = os.path.realpath(sub_dir)
     # call make in the submission directory
-    try:
-        subprocess.check_call('make -C ' + sub_dir, shell=True)
-    # if theres an error building do something
-    except subprocess.CalledProcessError as e:
+    proc = subprocess.Popen(['make'],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            cwd=sub_dir
+                            )
+    # get the build output from gcc/clang
+    out, err = proc.communicate()
+    # get the return code of Make
+    return_code = proc.wait()
+    # if the return code is not zero
+    if return_code is not 0:
+        # store the build info in the database
+        submission.build_output = out
+        # say the build was unsucessful
         return False
-    return True
+    else:
+        # say the build was successful
+        return True
 
 
 def grade_unit_test(test_id, submission_id):
@@ -108,6 +120,10 @@ def grade_unit_test(test_id, submission_id):
     proc = subprocess.Popen([exec_file, '-r', 'xml'], stdout=subprocess.PIPE)
     # get the xml output from the test executable
     out, err = proc.communicate()
+    # check the return code
+    return_code = proc.wait()
+    if return_code is not 0:
+        return False
     # get the root XML element
     root = ElementTree.fromstring(out)
     # Get the results node
@@ -119,7 +135,15 @@ def grade_unit_test(test_id, submission_id):
     percent = successes / float(successes + failures)
     score = round(percent * test.points)
     submit_test.score = score
-    print score
+    # run the test executable in human readable mode
+    proc = subprocess.Popen([exec_file], stdout=subprocess.PIPE)
+    # get the human-readable output from the test executable
+    out, err = proc.communicate()
+    submit_test.output = out
+    database.db_session.add(submit_test)
+    database.db_session.commit()
+    return True
+
 
 def grade_diff_test(test_id, submission_id):
     return
