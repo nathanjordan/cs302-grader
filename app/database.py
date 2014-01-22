@@ -78,7 +78,6 @@ class Assignment(Base):
     description = Column(String(50))
     long_description = Column(String(500))
     due_date = Column(DateTime)
-    points = Column(Integer)
     is_active = Column(Boolean)
 
 
@@ -95,7 +94,6 @@ class Submission(Base):
                            backref='submissions')
     filename = Column(String(50))
     submitted = Column(DateTime)
-    score = Column(Integer)
     is_final = Column(Boolean)
 
     @classmethod
@@ -132,6 +130,18 @@ class Test(Base):
     test_type = Column(String(50))
     reference_executable_filename = Column(String(50))
     is_private = Column(Boolean)
+    points = Column(Integer)
+
+class SubmissionTest(Base):
+
+    __tablename__ = 'submission_test'
+
+    submission_id = Column(Integer, ForeignKey('submission.id'), primary_key=True)
+    submission = relationship('Submission', uselist=False, backref='submission_tests')
+    test_id = Column(Integer, ForeignKey('test.id'), primary_key=True)
+    test = relationship('Test', uselist=False, backref='submission_tests')
+    output = Column(String(1200))
+    score = Column(Integer)
 
 def test_data():
     # Clear existing database
@@ -152,8 +162,8 @@ def test_data():
     db_session.add(bob)
     db_session.add(susan)
 
-    assignment1 = Assignment(name="Assignment 1", description="Stacks", due_date=datetime.datetime.now(), points=10, is_active=True)
-    assignment2 = Assignment(name="Assignment 2", description="Linked Lists", due_date=datetime.datetime.now(), points=10, is_active=True)
+    assignment1 = Assignment(name="Assignment 1", description="Stacks", due_date=datetime.datetime.now(), is_active=True)
+    assignment2 = Assignment(name="Assignment 2", description="Linked Lists", due_date=datetime.datetime.now(), is_active=True)
 
     db_session.add(assignment1)
     db_session.add(assignment2)
@@ -164,21 +174,21 @@ def test_data():
     db_session.add(resource1)
     db_session.add(resource2)
 
-    test1 = Test(assignment=assignment1, executable_filename="unit_tests_public", test_type="unit", is_private=False)
-    test2 = Test(assignment=assignment1, executable_filename="unit_tests_private", test_type="unit", is_private=True)
-    test3 = Test(assignment=assignment1, executable_filename="diff_test_1", test_type="diff", is_private=False, reference_executable_filename="diff_test_1_reference")
-    test4 = Test(assignment=assignment1, executable_filename="diff_test_2", test_type="diff", is_private=False, reference_executable_filename="diff_test_2_reference")
+    test1 = Test(assignment=assignment1, executable_filename="unit_tests_public", test_type="unit", is_private=False, points=10)
+    test2 = Test(assignment=assignment1, executable_filename="unit_tests_private", test_type="unit", is_private=True, points=10)
+    test3 = Test(assignment=assignment1, executable_filename="diff_test_1", test_type="diff", is_private=False, reference_executable_filename="diff_test_1_reference", points=10)
+    test4 = Test(assignment=assignment1, executable_filename="diff_test_2", test_type="diff", is_private=False, reference_executable_filename="diff_test_2_reference", points=10)
 
     db_session.add(test1)
     db_session.add(test2)
     db_session.add(test3)
     db_session.add(test4)
 
-    bob_submission1 = Submission(assignment=assignment1, student=bob, score=8, submitted=datetime.datetime.now(), is_final=False)
-    bob_submission2 = Submission(assignment=assignment1, student=bob, score=9, submitted=datetime.datetime.now(), is_final=False)
-    bob_submission3 = Submission(assignment=assignment2, student=bob, score=7, submitted=datetime.datetime.now(), is_final=True)
-    susan_submission1 = Submission(assignment=assignment1, student=susan, score=7, submitted=datetime.datetime.now(), is_final=False)
-    susan_submission2 = Submission(assignment=assignment1, student=susan, score=9, submitted=datetime.datetime.now(), is_final=False)
+    bob_submission1 = Submission(assignment=assignment1, student=bob, submitted=datetime.datetime.now(), is_final=False)
+    bob_submission2 = Submission(assignment=assignment1, student=bob, submitted=datetime.datetime.now(), is_final=False)
+    bob_submission3 = Submission(assignment=assignment2, student=bob, submitted=datetime.datetime.now(), is_final=True)
+    susan_submission1 = Submission(assignment=assignment1, student=susan, submitted=datetime.datetime.now(), is_final=False)
+    susan_submission2 = Submission(assignment=assignment1, student=susan, submitted=datetime.datetime.now(), is_final=False)
 
     db_session.add(bob_submission1)
     db_session.add(bob_submission2)

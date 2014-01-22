@@ -5,9 +5,7 @@ from flask import (Flask, send_from_directory, render_template, request,
 from werkzeug import secure_filename
 from database import db_session
 import database
-import ldap
 import os
-import test_data
 import sys
 import auth
 import datetime
@@ -78,6 +76,9 @@ def assignment_route(id):
 @app.route('/assignment/<int:id>/submit', methods=['POST'])
 def assignment_submit_route(id):
     if request.method == 'POST':
+        # get the submission object
+        assignment = database.db_session.query(
+            database.Assignment).get(id)
         archive = request.files['archive']
         if not archive:
             return 'No file chosen', 400
@@ -102,6 +103,11 @@ def assignment_submit_route(id):
         grader.unzip_assignment_archive(sub_id)
         grader.copy_assignment_files(sub_id)
         grader.build_submission(sub_id)
+        for test in assignment.tests:
+            if test.test_type == 'unit':
+                grader.grade_unit_test(test.id, sub_id)
+            if test.test_type == 'diff':
+                grader.grade_diff_test(test.id, sub_id)
         return 'Success', 200
 
 @app.route('/resource/<int:id>')
