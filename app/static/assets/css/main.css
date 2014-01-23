@@ -8,7 +8,7 @@ padding-bottom:0.3em;
     }
 
 .username {
-    color: #ed9c28 !important;
+    color: #31708f !important;
 }
 
 .form-signin {
@@ -24,4 +24,18 @@ padding-bottom:0.3em;
 
 .container {
     max-width: 960px;
+}
+
+.build-failure {
+    color: #a94442 !important;
+    background-color: #f2dede;
+    border-color: #ebccd1;
+}
+
+.build-failure:hover {
+    background-color: #ebccd1;
+}
+
+.build-failure h4 {
+    color: #a94442 !important;
 }

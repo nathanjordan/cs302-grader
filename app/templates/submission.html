@@ -1,22 +1,29 @@
     {% include 'header.html' %}
 
-    <h1>Test ID {{ test.id }}</h1>
-    <h2>Unit Tests</h1>
+    <h1>Submission ID {{ submission.id }}</h1>
 
-    {% for test in submission.unit_tests %}
-    <h4>{{ test.test}}</h4>
-    <pre>
-        {{ test.test_output }}
-    </pre>
-    {% endfor %}
+    {% if submission.build_output %}
+        <h3>Build Output</h3>
+        <div class="alert alert-warning">In order for your assignment to be graded, correct the errors below. Assignments that do not build properly will recieve no credit.</div>
+        <pre>
+        {{ submission.build_output }}
+        </pre>
+    {% endif %}
 
-    <h2>Output Comparison Tests</h>
+    {% if not submission.build_output %}
+        <h2>Tests</h2>
+        <div class="alert alert-info">Check the output below for the results of your assignment.</div>
+        {% for test in submission_tests %}
+        <h4>Test {{ test.id }} - {{ test.test_type }}</h4>
+            {% if test.test_type == 'unit' %}
+                <pre>
+                {{ test.output }}
+                </pre>
+            {% elif test.test_type == 'diff' %}
 
-    {% for test in submission.output_tests %}
-    <h4>{{ test.test }}</h4>
-    <pre>
-        {{ test.test_output }}
-    </pre>
-    {% endfor %}
+            {% endif %}
+        {% endfor %}
+
+    {% endif %}
 
     {% include 'footer.html' %}

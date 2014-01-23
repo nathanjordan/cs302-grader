@@ -2,6 +2,7 @@ from sqlalchemy import (Column, ForeignKey, Integer, String, Boolean, DateTime,
                         create_engine, and_, func, create_engine)
 from sqlalchemy.orm import relationship, scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
 import datetime
 import os
 
@@ -19,21 +20,21 @@ class Student(Base):
 
     @classmethod
     def get_submitted_assignments(cls, net_id):
-        assignments = db_session.query(Assignment).join(Submission).filter(
-            Submission.net_id == net_id
-        )
+        assignments = db_session.query(Assignment).join(Submission).filter(and_(
+            Submission.net_id == net_id,
+            Submission.is_final
+        ))
         return assignments
 
     @classmethod
     def get_unsubmitted_assignments(cls, net_id):
-        assignments = db_session.query(Assignment).join(Submission).filter(and_(
+        assignments = db_session.query(Assignment).join(Submission).filter(
             ~Assignment.id.in_(
-                db_session.query(Assignment.id).join(Submission).filter(
-                    Submission.net_id == net_id
-                )
-            ),
-            Submission.is_final
-        )
+                db_session.query(Assignment.id).join(Submission).filter(and_(
+                    Submission.net_id == net_id,
+                    Submission.is_final
+                ))
+            )
         )
         return assignments
 
@@ -79,6 +80,14 @@ class Assignment(Base):
     long_description = Column(String(500))
     due_date = Column(DateTime)
     is_active = Column(Boolean)
+
+    @hybrid_property
+    def points(self):
+        total = 0
+        for test in self.tests:
+            total += test.points
+        return total
+
 
 
 class Submission(Base):
@@ -186,7 +195,7 @@ def test_data():
     db_session.add(test4)
 
     bob_submission1 = Submission(assignment=assignment1, student=bob, submitted=datetime.datetime.now(), is_final=False)
-    bob_submission2 = Submission(assignment=assignment1, student=bob, submitted=datetime.datetime.now(), is_final=False)
+    bob_submission2 = Submission(assignment=assignment1, student=bob, submitted=datetime.datetime.now(), is_final=False, build_output="output")
     bob_submission3 = Submission(assignment=assignment2, student=bob, submitted=datetime.datetime.now(), is_final=True)
     susan_submission1 = Submission(assignment=assignment1, student=susan, submitted=datetime.datetime.now(), is_final=False)
     susan_submission2 = Submission(assignment=assignment1, student=susan, submitted=datetime.datetime.now(), is_final=False)

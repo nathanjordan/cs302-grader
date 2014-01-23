@@ -24,10 +24,16 @@
         {% endfor %}
     </ul>
 
+    <a href="/resource_zip/{{ assignment.id }}" class="btn btn-info">Download all</a>
+
     <h3>Submit/Test Upload</h3>
 
     {% if is_final %}
         <div class="alert alert-info">You have already submitted this assignment, your score is in blue below.</div>
+    {% endif %}
+
+    {% if not is_final and latest_submission.build_output %}
+        <div class="alert alert-danger">Your last assignment failed to build, look at the build output under the latest submission below.</div>
     {% endif %}
 
     {% if not is_final %}
@@ -51,6 +57,8 @@
         {% for submission in submissions %}
         {% if submission.is_final %}
         <a href="/submission/{{ submission.id }}" class="list-group-item active">
+        {% elif submission.build_output %}
+        <a href="/submission/{{ submission.id }}" class="list-group-item build-failure">
         {% else %}
         <a href="/submission/{{ submission.id }}" class="list-group-item">
         {% endif %}

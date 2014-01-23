@@ -65,12 +65,22 @@ def assignment_route(id):
     is_final = database.Assignment.check_assignment_completed(session['net_id'], id)
     # get the resources from the assignment
     resources = database.Assignment.get_assignment_resources(id)
+    # get latest date
+    dates = []
+    for submission in submissions:
+        dates.append(submission.submitted)
+    max_date = max(dates)
+    # find the submission with the latest date
+    latest_submission = submissions.filter(
+        database.Submission.submitted == max_date
+    )[0]
     # display assignment page
     return render_template('assignment.html',
                            assignment=assignment,
                            submissions=submissions,
                            resources=resources,
                            is_final=is_final,
+                           latest_submission=latest_submission,
                            page_title='Assignment ' + str(id))
 
 @app.route('/assignment/<int:id>/submit', methods=['POST'])
@@ -140,13 +150,13 @@ def get_resource(id):
 
 @app.route('/submission/<int:id>')
 def test_route(id):
-    test_output = open(current_path + '/sample_test.txt').read()
-    print test_output
-    test = {
-        "id": 5,
-        "test_output": test_output
-    }
-    return render_template('submission.html', test=test)
+    submission= database.db_session.query(
+        database.Submission).get(id)
+    submission_tests = submission.submission_tests
+    return render_template('submission.html',
+                           page_title='Submission ' + str(submission.id),
+                           submission=submission,
+                           submission_tests=submission_tests)
 
 
 @app.route('/logout')
