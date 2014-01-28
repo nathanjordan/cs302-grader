@@ -3,6 +3,7 @@ from sqlalchemy import (Column, ForeignKey, Integer, String, Boolean, DateTime,
 from sqlalchemy.orm import relationship, scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
+import string
 import datetime
 import os
 
@@ -151,7 +152,20 @@ class SubmissionTest(Base):
     test_id = Column(Integer, ForeignKey('test.id'), primary_key=True)
     test = relationship('Test', uselist=False, backref='submission_tests')
     output = Column(String(1200))
+    diff_output = Column(String(1200))
+    error = Column(String(1200))
     score = Column(Integer)
+
+    @hybrid_property
+    def diff_by_line(self):
+        string_list = string.split(self.diff_output, '\n')
+        jj = []
+        for x in string_list:
+            code = x[0:1]
+            line = x[2:len(x)]
+            jj.append((code, line))
+        return jj
+
 
 def test_data():
     # Clear existing database

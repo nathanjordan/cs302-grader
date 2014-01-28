@@ -39,3 +39,21 @@ padding-bottom:0.3em;
 .build-failure h4 {
     color: #a94442 !important;
 }
+
+.diff-line {
+    padding:2px;
+    background-color: #eee;
+    display:block;
+}
+
+.diff-green {
+    color:green;
+}
+
+.diff-red {
+    color:red;
+}
+
+.diff-yellow {
+    color:yellow;
+}

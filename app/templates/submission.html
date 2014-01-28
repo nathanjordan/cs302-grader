@@ -14,13 +14,13 @@
         <h2>Tests</h2>
         <div class="alert alert-info">Check the output below for the results of your assignment.</div>
         {% for test in submission_tests %}
-        <h4>Test {{ test.id }} - {{ test.test_type }}</h4>
-            {% if test.test_type == 'unit' %}
-                <pre>
+        <h4>Test ID {{ test.test_id }} - {{ test.test.test_type }}</h4>
+            {% if test.test.test_type == 'unit' %}
+                <pre>{{ test.output }}</pre>
+            {% elif test.test.test_type == 'diff' %}
+            <div id="test{{ test.test_id }}">
                 {{ test.output }}
-                </pre>
-            {% elif test.test_type == 'diff' %}
-
+            </div>
             {% endif %}
         {% endfor %}
 

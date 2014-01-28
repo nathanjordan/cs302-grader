@@ -5,6 +5,7 @@ import shutil
 import glob
 import subprocess
 import xml.etree.ElementTree as ElementTree
+import difflib
 
 current_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -120,10 +121,6 @@ def grade_unit_test(test_id, submission_id):
     proc = subprocess.Popen([exec_file, '-r', 'xml'], stdout=subprocess.PIPE)
     # get the xml output from the test executable
     out, err = proc.communicate()
-    # check the return code
-    return_code = proc.wait()
-    if return_code is not 0:
-        return False
     # get the root XML element
     root = ElementTree.fromstring(out)
     # Get the results node
@@ -136,7 +133,7 @@ def grade_unit_test(test_id, submission_id):
     score = round(percent * test.points)
     submit_test.score = score
     # run the test executable in human readable mode
-    proc = subprocess.Popen([exec_file], stdout=subprocess.PIPE)
+    proc = subprocess.Popen([exec_file, '-r', 'console'], stdout=subprocess.PIPE)
     # get the human-readable output from the test executable
     out, err = proc.communicate()
     submit_test.output = out
@@ -146,4 +143,61 @@ def grade_unit_test(test_id, submission_id):
 
 
 def grade_diff_test(test_id, submission_id):
-    return
+    # get the submission object
+    submission = database.db_session.query(
+        database.Submission).get(submission_id)
+    # get test
+    test = database.db_session.query(
+        database.Test).get(test_id)
+    # create a testsubmission
+    submit_test = database.SubmissionTest(test=test, submission=submission)
+    # get the submission directory
+    sub_dir = os.path.join(current_path,
+                           '..',
+                           'submissions',
+                           'assignment' + str(submission.assignment_id),
+                           submission.net_id,
+                           str(submission.id)
+                           )
+    sub_dir = os.path.realpath(sub_dir)
+    # get the reference executable filename
+    ref_exec_file = sub_dir + '/' + test.reference_executable_filename
+    # get the students executable filename
+    exec_file = sub_dir + '/' + test.executable_filename
+    # run the reference
+    proc = subprocess.Popen([ref_exec_file], stdout=subprocess.PIPE)
+    out, err = proc.communicate()
+    reference_output = out
+    # run the student executable
+    proc = subprocess.Popen([exec_file], stdout=subprocess.PIPE)
+    out, err = proc.communicate()
+    if err and len(err) and proc.wait() is not 0:
+        submit_test.error = err
+        return False
+    output = out
+    # compare the results
+    diff = difflib.ndiff(reference_output, output)
+    print 'ref'
+    print reference_output
+    print 'out'
+    print output
+    # calculate the incorrect lines
+    diff_string = ''
+    incorrect_lines = 0
+    total_lines = 0
+    for line in diff:
+        code = line[0:1]
+        if code is not " ":
+            incorrect_lines += 1
+        total_lines += 1
+        diff_string += line
+    # get the percentage
+    percentage = float(total_lines - incorrect_lines) / float(total_lines)
+    # calculate score
+    score = round(percentage * test.points)
+    submit_test.score = score
+    submit_test.output = output
+    submit_test.diff_output = diff_string
+    database.db_session.add(submit_test)
+    database.db_session.commit()
+    return True
