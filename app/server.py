@@ -43,22 +43,42 @@ def before_request():
     else:
         return redirect('/login')
 
+@app.route('/admin/')
+def index_admin_route():
+    assignments = database.db_session.query(database.Assignment).all()
+    return render_template('index_admin.html',
+                        page_title="Admin Home",
+                        assignments=assignments
+                        )
+
+
+@app.route('/admin/assignment/<int:id>')
+def assignment_admin_route(id):
+    assignment = database.db_session.query(database.Assignment).get(id)
+    resources = database.Assignment.get_assignment_resources(id)
+    return render_template('assignment_admin.html',
+                        page_title="Assignment " + str(id),
+                        assignment=assignment,
+                        resources=resources,
+                        submissions=assignment.submissions
+                        )
+
 
 @app.route('/')
 def index_route():
     sub = database.Student.get_submitted_assignments(session['net_id'])
     unsub = database.Student.get_unsubmitted_assignments(session['net_id'])
     return render_template('index.html',
-                           page_title="Home",
-                           submitted_assignments=sub,
-                           unsubmitted_assignments=unsub
-                           )
+                        page_title="Home",
+                        submitted_assignments=sub,
+                        unsubmitted_assignments=unsub
+                        )
 
 
 @app.route('/assignment/<int:id>')
 def assignment_route(id):
     # get the requested assignment
-    assignment = database.Assignment.get_active_assignment_by_id(id)
+    assignment = database.Assignment.get_assignment_by_id(id)
     # Get the submissions
     submissions = database.Assignment.get_assignment_submissions(session['net_id'], id)
     # figure out if this assignment was finalized
@@ -76,12 +96,13 @@ def assignment_route(id):
     )[0]
     # display assignment page
     return render_template('assignment.html',
-                           assignment=assignment,
-                           submissions=submissions,
-                           resources=resources,
-                           is_final=is_final,
-                           latest_submission=latest_submission,
-                           page_title='Assignment ' + str(id))
+                        assignment=assignment,
+                        submissions=submissions,
+                        resources=resources,
+                        is_final=is_final,
+                        latest_submission=latest_submission,
+                        page_title='Assignment ' + str(id))
+
 
 @app.route('/assignment/<int:id>/submit', methods=['POST'])
 def assignment_submit_route(id):
@@ -128,6 +149,7 @@ def assignment_submit_route(id):
                 grader.grade_diff_test(test.id, sub_id)
         return redirect('/assignment/' + str(id))
 
+
 @app.route('/resource/<int:id>')
 def get_resource(id):
     # get the resource from the db
@@ -147,6 +169,7 @@ def get_resource(id):
     return send_file(path + '/' + resource_filename,
                      as_attachment=True,
                      attachment_filename=resource_filename)
+
 
 @app.route('/submission/<int:id>')
 def test_route(id):
@@ -185,7 +208,11 @@ def login_route():
         if not auth.auth_user(username, password):
             return render_template('login.html', error="Invalid credentials")
         session['net_id'] = username
-        return redirect('/')
+        session['is_admin'] = database.db_session.query(database.Student).get(username).is_admin
+        if session['is_admin']:
+            return redirect('/admin/')
+        else:
+            return redirect('/')
 
 
 # Serves static resources like css, js, images, etc.
@@ -200,5 +227,7 @@ def shutdown_session(exception=None):
     db_session.remove()
 
 if __name__ == '__main__':
+    # insert test data TODO DELETE FOR PRODUCTION
     database.test_data()
+    # run the app on all interfaces on port 8000
     app.run("0.0.0.0", 8000)

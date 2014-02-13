@@ -57,3 +57,7 @@ padding-bottom:0.3em;
 .diff-yellow {
     color:yellow;
 }
+
+.list-group-item.hidden-assignment {
+    background-color: #eee;
+}

@@ -177,10 +177,6 @@ def grade_diff_test(test_id, submission_id):
     output = out
     # compare the results
     diff = difflib.ndiff(reference_output, output)
-    print 'ref'
-    print reference_output
-    print 'out'
-    print output
     # calculate the incorrect lines
     diff_string = ''
     incorrect_lines = 0

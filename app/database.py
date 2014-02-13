@@ -40,14 +40,13 @@ class Student(Base):
         return assignments
 
 
-
 class Assignment(Base):
     """ Class for assignments DBO """
 
     __tablename__ = 'assignment'
 
     @classmethod
-    def get_active_assignment_by_id(cls, assignment_id):
+    def get_assignment_by_id(cls, assignment_id):
         assignment = db_session.query(Assignment).get(assignment_id)
         return assignment
 
@@ -90,7 +89,6 @@ class Assignment(Base):
         return total
 
 
-
 class Submission(Base):
 
     __tablename__ = 'submission'
@@ -120,6 +118,7 @@ class Submission(Base):
         db_session.refresh(submission)
         return submission.id
 
+
 class Resource(Base):
 
     __tablename__ = 'resource'
@@ -129,6 +128,7 @@ class Resource(Base):
     assignment = relationship('Assignment', uselist=False, backref='resources')
     filename = Column(String(50))
     description = Column(String(100))
+
 
 class Test(Base):
 
@@ -142,6 +142,7 @@ class Test(Base):
     reference_executable_filename = Column(String(50))
     is_private = Column(Boolean)
     points = Column(Integer)
+
 
 class SubmissionTest(Base):
 
@@ -188,9 +189,11 @@ def test_data():
 
     assignment1 = Assignment(name="Assignment 1", description="Stacks", due_date=datetime.datetime.now(), is_active=True)
     assignment2 = Assignment(name="Assignment 2", description="Linked Lists", due_date=datetime.datetime.now(), is_active=True)
+    assignment3 = Assignment(name="Assignment 3", description="Queues", due_date=datetime.datetime.now(), is_active=False)
 
     db_session.add(assignment1)
     db_session.add(assignment2)
+    db_session.add(assignment3)
 
     resource1 = Resource(assignment=assignment1, filename="Makefile", description="the makefile brah")
     resource2 = Resource(assignment=assignment1, filename="Stack.h", description="your stack header brah")

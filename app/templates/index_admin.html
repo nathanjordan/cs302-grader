@@ -1,0 +1,37 @@
+    {% include 'header.html' %}
+
+    <h2>Assignments
+    <a href="/admin/assignment/new" class="btn btn-info pull-right">New Assignment</a>
+</h2>
+    <ul class="list-group">
+        {% if assignments|length == 0 %}
+        <div class="alert alert-info">No assignments have been created</div>
+        {% endif %}
+        {% for assignment in assignments %}
+        {% if assignment.is_active %}
+        <a href="/admin/assignment/{{ assignment.id }}" class="list-group-item">
+        {% else %}
+        <a href="/admin/assignment/{{ assignment.id }}" class="list-group-item hidden-assignment">
+        {% endif %}
+            <h4 class="list-group-item-heading">{{ assignment.name }}</h4>
+            <p class="list-group-item-text">{{ assignment.description }}</p>
+        </a>
+        {% endfor %}
+    </ul>
+
+    <h2>Students
+    <a href="/student/new" class="btn btn-info pull-right">New Student</a>
+</h2>
+    <ul class="list-group">
+        {% if students|length == 0 %}
+        <div class="alert alert-info">No students exist :(</div>
+        {% endif %}
+        {% for student in students %}
+        <a href="/admin/student/{{ student.id }}" class="list-group-item">
+            <h4 class="list-group-item-heading">{{ student.last_name }}</h4>
+            <p class="list-group-item-text">{{ student.username }}</p>
+        </a>
+        {% endfor %}
+    </ul>
+
+    {% include 'footer.html' %}
