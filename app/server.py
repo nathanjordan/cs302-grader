@@ -31,6 +31,7 @@ def extension_allowed(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
+
 @app.before_request
 def before_request():
     # if the request is to login, or get assets like css, let them through
@@ -42,6 +43,7 @@ def before_request():
     # otherwise, redirect to the login page
     else:
         return redirect('/login')
+
 
 @app.route('/admin/')
 def index_admin_route():
@@ -57,11 +59,11 @@ def assignment_admin_route(id):
     assignment = database.db_session.query(database.Assignment).get(id)
     resources = database.Assignment.get_assignment_resources(id)
     return render_template('assignment_admin.html',
-                        page_title="Assignment " + str(id),
-                        assignment=assignment,
-                        resources=resources,
-                        submissions=assignment.submissions
-                        )
+                           page_title="Assignment " + str(id),
+                           assignment=assignment,
+                           resources=resources,
+                           submissions=assignment.submissions
+                           )
 
 
 @app.route('/')
@@ -221,6 +223,7 @@ def serve_static_resource(resource):
     asset_path = current_path + '/static/assets/'
     # Return the static file
     return send_from_directory(asset_path, resource)
+
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
